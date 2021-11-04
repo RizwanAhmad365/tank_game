@@ -4,9 +4,9 @@ const blockColor = "#000";
 const fps = 60;
 const can = document.getElementById("canvas");
 const ctx = can.getContext("2d");
-const arrowKeyCodes = [37, 38, 39, 40];
+const arrowKeyCodes = [37, 38, 39, 40]; //must be in clockwise orders
 const playerSpeed = 60; // blocks per second
-const bulletSpeed = 100;
+const bulletSpeed = 30;
 const bulletPerSecond = bulletSpeed;
 let canHeight = canvas.height;
 let canWidth = canvas.width;
@@ -70,6 +70,21 @@ class Slab {
     }
     return false;
   }
+
+  slabWillCollide(anotherSlab) {
+    if (
+      this.pos.x - anotherSlab.pos.x < 3 &&
+      this.pos.x - anotherSlab.pos.x > -3
+    ) {
+      if (
+        this.pos.y - anotherSlab.pos.y < 3 &&
+        this.pos.y - anotherSlab.pos.y > -3
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 class Bullet extends Slab {
@@ -107,20 +122,32 @@ class Bullet extends Slab {
 class Tank extends Slab {
   constructor(x = 0, y = 0, dir = 39) {
     super(x, y, 3, 3);
-    this.shape = [
-      [1, 1, 0],
-      [0, 1, 1],
-      [1, 1, 0],
-    ];
+    this.shape =
+      dir === 37
+        ? [
+            [0, 1, 1],
+            [1, 1, 0],
+            [0, 1, 1],
+          ]
+        : dir === 38
+        ? [
+            [0, 1, 0],
+            [1, 1, 1],
+            [1, 0, 1],
+          ]
+        : dir === 39
+        ? [
+            [1, 1, 0],
+            [0, 1, 1],
+            [1, 1, 0],
+          ]
+        : [
+            [1, 0, 1],
+            [1, 1, 1],
+            [0, 1, 0],
+          ];
     this.dir = dir;
     this.bullets = [];
-    if (dir === 40) {
-      this.rotateClockwise();
-    } else if (dir === 37) {
-      this.flip();
-    } else if (dir === 38) {
-      this.rotateCounterClockwise();
-    }
   }
   drawSelfAndBullet() {
     this.shape.forEach((row, m) => {
@@ -131,11 +158,25 @@ class Tank extends Slab {
       });
     });
 
-    if (this.bullets.length != 0) {
+    if (this.bullets.length > 0) {
       this.drawBullets();
+      this.checkForBulletCollision();
     }
   }
-
+  checkForBulletCollision() {
+    if (this == player) {
+      this.bullets.forEach((bullet) => {
+        const self = bullet;
+        enemies.forEach((enemy, i) => {
+          if (bullet.slabWillCollide(enemy)) {
+            console.log("ej");
+            this.bullets.splice(this.bullets.indexOf(bullet), 1);
+            enemies.splice(enemies.indexOf(enemy), 1);
+          }
+        });
+      });
+    }
+  }
   drawBullets() {
     this.bullets.forEach((bullet, i) => {
       drawBlockAt(bullet.pos.x, bullet.pos.y, 1, 1);
@@ -162,10 +203,14 @@ class Tank extends Slab {
     this.shape.forEach((row) => {
       row.reverse();
     });
+    const indexOfDir = arrowKeyCodes.indexOf(this.dir);
+    this.dir = arrowKeyCodes[(indexOfDir + 1 + arrowKeyCodes.length) % 4];
   }
   rotateCounterClockwise() {
     this.transposeShape();
     this.shape.reverse();
+    const indexOfDir = arrowKeyCodes.indexOf(this.dir);
+    this.dir = arrowKeyCodes[(indexOfDir - 1 + arrowKeyCodes.length) % 4];
   }
   flip() {
     if (this.dir === 39 || this.dir === 37) {
@@ -175,8 +220,11 @@ class Tank extends Slab {
     } else {
       this.shape.reverse();
     }
+    const indexOfDir = arrowKeyCodes.indexOf(this.dir);
+    this.dir = arrowKeyCodes[(indexOfDir + 2 + arrowKeyCodes.length) % 4];
   }
   move(newDir) {
+    const oldPos = new Vector2(this.pos.x, this.pos.y);
     switch (newDir) {
       case 37:
         if (!this.slabTouchesLeft()) {
@@ -199,7 +247,35 @@ class Tank extends Slab {
         }
         break;
     }
+    if (this != player) {
+      if (this.slabWillCollide(player)) {
+        this.pos.x = oldPos.x;
+        this.pos.y = oldPos.y;
+        return false;
+      }
+    }
+
+    if (this.collidedWithOtherEnemies(this)) {
+      this.pos.x = oldPos.x;
+      this.pos.y = oldPos.y;
+      return false;
+    }
+
+    return true;
   }
+
+  collidedWithOtherEnemies(self) {
+    for (let i = 0; i < enemies.length; i++) {
+      if (this == enemies[i]) {
+        continue;
+      }
+      if (this.slabWillCollide(enemies[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   rotate(newDir) {
     const dirDifference = newDir - this.dir;
     if (Math.abs(dirDifference) === 2) {
@@ -209,8 +285,6 @@ class Tank extends Slab {
     } else if (dirDifference === -1 || dirDifference === 3) {
       this.rotateCounterClockwise();
     }
-
-    this.dir = newDir;
   }
   moveOrRotate(newDir) {
     if (this.dir === newDir) {
@@ -247,7 +321,41 @@ class Enemy extends Tank {
     super(x, y, dir);
   }
 
-  // moveEnemyInterval = setInterval();
+  facingTheWall() {
+    if (this.slabTouchesTop() && this.dir === 38) {
+      return true;
+    } else if (this.slabTouchesRight() && this.dir === 39) {
+      return true;
+    } else if (this.slabTouchesBottom() && this.dir === 40) {
+      return true;
+    } else if (this.slabTouchesLeft() && this.dir === 37) {
+      return true;
+    }
+    return false;
+  }
+  makeAMove() {
+    if (this.facingTheWall()) {
+      this.flip();
+      return;
+    }
+
+    if (Math.random() < 0.9) {
+      if (!this.move(this.dir)) {
+        if (Math.random() < 0.5) {
+          this.rotateClockwise();
+        } else {
+          this.rotateCounterClockwise();
+        }
+      }
+    }
+
+    if (Math.random() < 0.5) {
+      this.fire();
+    }
+  }
+  moveEnemyInterval = setInterval(() => {
+    this.makeAMove();
+  }, 1000);
 }
 player = new Tank();
 enemies = [];
