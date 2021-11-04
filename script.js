@@ -5,9 +5,9 @@ const fps = 60;
 const can = document.getElementById("canvas");
 const ctx = can.getContext("2d");
 const arrowKeyCodes = [37, 38, 39, 40];
-const playerSpeed = 30; // blocks per second
-const bulletPerSecond = 5;
-const bulletSpeed = 45;
+const playerSpeed = 60; // blocks per second
+const bulletSpeed = 100;
+const bulletPerSecond = bulletSpeed;
 let canHeight = canvas.height;
 let canWidth = canvas.width;
 
@@ -105,17 +105,23 @@ class Bullet extends Slab {
 }
 
 class Tank extends Slab {
-  constructor(x = 0, y = 0) {
+  constructor(x = 0, y = 0, dir = 39) {
     super(x, y, 3, 3);
     this.shape = [
       [1, 1, 0],
       [0, 1, 1],
       [1, 1, 0],
     ];
-    this.dir = 39;
+    this.dir = dir;
     this.bullets = [];
+    if (dir === 40) {
+      this.rotateClockwise();
+    } else if (dir === 37) {
+      this.flip();
+    } else if (dir === 38) {
+      this.rotateCounterClockwise();
+    }
   }
-
   drawSelfAndBullet() {
     this.shape.forEach((row, m) => {
       row.forEach((elem, n) => {
@@ -236,7 +242,15 @@ class Tank extends Slab {
   }
 }
 
+class Enemy extends Tank {
+  constructor(x, y, dir) {
+    super(x, y, dir);
+  }
+
+  // moveEnemyInterval = setInterval();
+}
 player = new Tank();
+enemies = [];
 
 function throttle(fn, delay) {
   let lastTime = 0;
@@ -306,10 +320,64 @@ function fillWithBgColor() {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, canWidth, canHeight);
 }
+function addEnemy() {
+  const possiblePoses = {
+    x: [0, canWidth / blockSize - 3],
+    y: [0, canHeight / blockSize - 3],
+  };
+
+  const enemyPos = new Vector2(
+    Math.random() < 0.5 ? possiblePoses.x[0] : possiblePoses.x[1],
+    Math.random() < 0.5 ? possiblePoses.y[0] : possiblePoses.y[1]
+  );
+  const enemyDir =
+    arrowKeyCodes[Math.floor(Math.random() * arrowKeyCodes.length)];
+  const newEnemy = new Enemy(enemyPos.x, enemyPos.y, enemyDir);
+
+  if (!onTopOfPlayer(newEnemy) && !onTopOfOtherEnemies(newEnemy)) {
+    enemies.push(newEnemy);
+  }
+}
+function onTopOfOtherEnemies(newEnemy) {
+  let isOnTop = false;
+  const otherEnemies = enemies.filter((enemy) => {
+    if (enemy === newEnemy) {
+      return false;
+    }
+    return true;
+  });
+
+  for (let i = 0; i < otherEnemies.length; i++) {
+    if (onTopOfEachOther(otherEnemies[i], newEnemy)) {
+      isOnTop = true;
+      break;
+    }
+  }
+
+  return isOnTop;
+}
+
+function onTopOfPlayer(newEnemy) {
+  return onTopOfEachOther(player, newEnemy);
+}
+
+function onTopOfEachOther(tank1, tank2) {
+  if (tank1.pos.x - tank2.pos.x < 3 && tank1.pos.x - tank2.pos.x > -3) {
+    if (tank1.pos.y - tank2.pos.y < 3 && tank1.pos.y - tank2.pos.y > -3) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function draw() {
   fillWithBgColor();
   player.drawSelfAndBullet();
+  enemies.forEach((enemy) => {
+    enemy.drawSelfAndBullet();
+  });
 }
+addEnemyInterval = setInterval(addEnemy, 1000);
 draw();
-function update() {}
 setInterval(draw, 1000 / fps);
