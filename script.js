@@ -345,13 +345,19 @@ class Enemy extends Tank {
       return;
     }
 
-    if (Math.random() < 0.9) {
+    if (Math.random() < 0.7) {
       if (!this.move(this.dir)) {
         if (Math.random() < 0.5) {
           this.rotateClockwise();
         } else {
           this.rotateCounterClockwise();
         }
+      }
+    } else {
+      if (Math.random() < 0.5) {
+        this.rotateClockwise();
+      } else {
+        this.rotateCounterClockwise();
       }
     }
 
@@ -363,6 +369,7 @@ class Enemy extends Tank {
     this.makeAMove();
   }, 1000);
 }
+
 player = new Tank();
 enemies = [];
 
@@ -448,7 +455,7 @@ function addEnemy() {
     arrowKeyCodes[Math.floor(Math.random() * arrowKeyCodes.length)];
   const newEnemy = new Enemy(enemyPos.x, enemyPos.y, enemyDir);
 
-  if (!onTopOfPlayer(newEnemy) && !onTopOfOtherEnemies(newEnemy)) {
+  if (!newEnemy.slabWillCollide(player) && !onTopOfOtherEnemies(newEnemy)) {
     enemies.push(newEnemy);
   }
 }
@@ -459,20 +466,6 @@ function onTopOfOtherEnemies(newEnemy) {
     }
 
     if (newEnemy.slabWillCollide(enemies[i])) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function onTopOfPlayer(newEnemy) {
-  return onTopOfEachOther(player, newEnemy);
-}
-
-function onTopOfEachOther(tank1, tank2) {
-  if (tank1.pos.x - tank2.pos.x < 3 && tank1.pos.x - tank2.pos.x > -3) {
-    if (tank1.pos.y - tank2.pos.y < 3 && tank1.pos.y - tank2.pos.y > -3) {
       return true;
     }
   }
