@@ -453,22 +453,17 @@ function addEnemy() {
   }
 }
 function onTopOfOtherEnemies(newEnemy) {
-  let isOnTop = false;
-  const otherEnemies = enemies.filter((enemy) => {
-    if (enemy === newEnemy) {
-      return false;
+  for (let i = 0; i < enemies.length; i++) {
+    if (enemies[i] === newEnemy) {
+      continue;
     }
-    return true;
-  });
 
-  for (let i = 0; i < otherEnemies.length; i++) {
-    if (onTopOfEachOther(otherEnemies[i], newEnemy)) {
-      isOnTop = true;
-      break;
+    if (newEnemy.slabWillCollide(enemies[i])) {
+      return true;
     }
   }
 
-  return isOnTop;
+  return false;
 }
 
 function onTopOfPlayer(newEnemy) {
