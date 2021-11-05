@@ -73,12 +73,12 @@ class Slab {
 
   slabWillCollide(anotherSlab) {
     if (
-      this.pos.x - anotherSlab.pos.x < 3 &&
-      this.pos.x - anotherSlab.pos.x > -3
+      this.pos.x - anotherSlab.pos.x < anotherSlab.size.x &&
+      this.pos.x - anotherSlab.pos.x > -this.size.x
     ) {
       if (
-        this.pos.y - anotherSlab.pos.y < 3 &&
-        this.pos.y - anotherSlab.pos.y > -3
+        this.pos.y - anotherSlab.pos.y < anotherSlab.size.y &&
+        this.pos.y - anotherSlab.pos.y > -this.size.y
       ) {
         return true;
       }
