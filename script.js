@@ -169,11 +169,17 @@ class Tank extends Slab {
         const self = bullet;
         enemies.forEach((enemy, i) => {
           if (bullet.slabWillCollide(enemy)) {
-            console.log("ej");
             this.bullets.splice(this.bullets.indexOf(bullet), 1);
             enemies.splice(enemies.indexOf(enemy), 1);
           }
         });
+      });
+    } else {
+      this.bullets.forEach((bullet) => {
+        const self = bullet;
+        if (self.slabWillCollide(player)) {
+          clearInterval(drawInterval);
+        }
       });
     }
   }
@@ -488,4 +494,4 @@ function draw() {
 }
 addEnemyInterval = setInterval(addEnemy, 1000);
 draw();
-setInterval(draw, 1000 / fps);
+drawInterval = setInterval(draw, 1000 / fps);
