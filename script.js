@@ -370,8 +370,8 @@ class Enemy extends Tank {
   }, 1000);
 }
 
-player = new Tank();
-enemies = [];
+const player = new Tank();
+const enemies = [];
 
 function throttle(fn, delay) {
   let lastTime = 0;
@@ -387,12 +387,12 @@ function throttle(fn, delay) {
 function fire() {
   player.fire();
 }
-throttledFire = throttle(fire, 1000 / bulletPerSecond);
+const throttledFire = throttle(fire, 1000 / bulletPerSecond);
 
 function move(newDir) {
   player.moveOrRotate(newDir);
 }
-throttledMove = throttle(move, 1000 / playerSpeed);
+const throttledMove = throttle(move, 1000 / playerSpeed);
 
 function fireOrMove(e) {
   const pressedKey = e.keyCode;
@@ -480,6 +480,6 @@ function draw() {
     enemy.drawSelfAndBullet();
   });
 }
-addEnemyInterval = setInterval(addEnemy, 1000);
+const addEnemyInterval = setInterval(addEnemy, 1000);
 draw();
-drawInterval = setInterval(draw, 1000 / fps);
+const drawInterval = setInterval(draw, 1000 / fps);
